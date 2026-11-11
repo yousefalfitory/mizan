@@ -148,6 +148,21 @@ textarea{min-height:90px;font-size:.8rem;direction:ltr;text-align:left}
 .thm{position:absolute;inset-inline-end:0;top:48px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;display:flex;gap:6px;z-index:6;box-shadow:0 6px 18px rgba(0,20,80,.2)}
 .thm button{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center}
 .thm button.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+.fs.exp{--blue:#dc2626;--blue-ink:#fff;--blue-soft:color-mix(in srgb,#dc2626 14%,var(--surface))}
+.fhead.red{background:linear-gradient(135deg,#dc2626,#991b1b)}
+.btn.redb{background:#dc2626;color:#fff;border-color:#dc2626;font-weight:700}
+.btn.grnw{background:#16a34a;color:#fff;border-color:#16a34a;font-weight:700}
+.fpbtn{display:grid;place-items:center;margin:14px auto 0;width:58px;height:58px;border-radius:50%;border:1.5px solid var(--blue);background:var(--blue-soft);color:var(--blue)}
+.fpbtn svg{width:30px;height:30px}
+.pwt svg{width:22px;height:22px;display:block}
+.sw.bio input:checked{background:var(--green)}
+.pdrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.pdrow:first-child{border-top:0}
+.thm{transform-origin:21px -27px;animation:thmIn .18s ease-out}
+.thm.out{animation:thmOut .17s ease-in forwards}
+@keyframes thmIn{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes thmOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.2)}}
+@media (prefers-reduced-motion:reduce){.thm,.thm.out{animation:none}}
 </style>
 </head>
 <body>
@@ -209,7 +224,7 @@ function allowed(srcId){return S.cats.filter(function(c){return c.src.indexOf(sr
 
 function txRow(t,acts){
   var inc=t.type==="in",bg=inc?"#16a34a22":ccolor(t.cat)+"22";
-  var h='<div class="tx"><span class="ci" style="background:'+bg+'">'+esc(inc?sicon(t.src):cicon(t.cat))+'</span><div class="info"><b>'+(inc?"دخل من "+esc(sname(t.src)):esc(cname(t.cat)))+'</b><span>'+(inc?"":esc(sname(t.src))+" · ")+dlabel(t.date)+'</span>'+(t.note?'<span>'+esc(t.note)+'</span>':'');
+  var h='<div class="tx"><span class="ci" style="background:'+bg+'">'+esc(inc?sicon(t.src):cicon(t.cat))+'</span><div class="info"><b>'+(inc?"دخل من "+esc(sname(t.src)):esc(cname(t.cat)))+'</b><span>'+(inc?"":esc(sname(t.src))+" · "+(t.kind?esc(t.kind)+" · ":""))+dlabel(t.date)+'</span>'+(t.note?'<span>'+esc(t.note)+'</span>':'');
   if(acts){
     if(CONF==="tx:"+t.id)h+='<div class="acts"><span class="warn">حذف هذه العملية نهائيًا؟</span><button class="btn sm danger" data-a="yes">نعم، احذف</button><button class="btn sm" data-a="no">إلغاء</button></div>';
     else h+='<div class="acts"><button class="btn sm" data-a="edit" data-id="'+t.id+'">تعديل</button><button class="btn sm danger" data-a="del" data-k="tx:'+t.id+'">حذف</button></div>';
@@ -247,26 +262,26 @@ function donut(map,total){
 }
 function vRep(){
   var key=ym(RM),m=S.tx.filter(function(t){return t.date.slice(0,7)===key});
-  var inc=sum(ofType(m,"in")),outs=ofType(m,"out"),exp=sum(outs),net=inc-exp,bc={},bs={};
-  outs.forEach(function(t){bc[t.cat]=(bc[t.cat]||0)+t.amount;bs[t.src]=(bs[t.src]||0)+t.amount});
+  var inc=sum(ofType(m,"in")),outs=ofType(m,"out"),exp=sum(outs),net=inc-exp,bc={},bs={},bk={};
+  outs.forEach(function(t){bc[t.cat]=(bc[t.cat]||0)+t.amount;bs[t.src]=(bs[t.src]||0)+t.amount;if(t.kind)bk[t.kind]=(bk[t.kind]||0)+t.amount});
   var h='<h2>التقارير الشهرية</h2><div class="monthbar"><button data-a="rnext" aria-label="الشهر التالي">›</button><b>'+mname(RM)+'</b><button data-a="rprev" aria-label="الشهر السابق">‹</button></div>';
   h+='<div class="card">'+donut(bc,exp)+'</div>';
   h+='<div class="two"><div class="stat i"><div><p>إجمالي الدخل</p><b>'+money(inc)+'</b></div><span class="arr">↑</span></div><div class="stat o"><div><p>إجمالي المصروفات</p><b>'+money(exp)+'</b></div><span class="arr">↓</span></div></div>';
   h+='<div class="stat i" style="margin-bottom:12px"><div><p>الرصيد المتبقي (صافي الشهر)</p><b style="'+(net<0?"color:var(--red)":"")+'"><span dir="ltr">'+money(net)+'</span></b></div><span class="hico">👛</span></div>';
   var ks=Object.keys(bs).sort(function(a,b){return bs[b]-bs[a]});
   h+='<div class="card"><h2>المصروفات حسب مصدر الدخل</h2>'+(ks.length?ks.map(function(k){var p=exp?bs[k]/exp*100:0;return '<div class="item"><div class="row between"><span>'+esc(sicon(k))+' '+esc(sname(k))+'</span><b>'+money(bs[k])+' · '+Math.round(p)+'%</b></div><div class="bar"><i style="width:'+p+'%"></i></div></div>'}).join(""):'<div class="empty">لا توجد مصروفات في هذا الشهر.</div>')+'</div>';
+  var kk=Object.keys(bk).sort(function(a,b){return bk[b]-bk[a]});
+  if(kk.length)h+='<div class="card"><h2>المصروفات حسب الفئة</h2>'+kk.map(function(k){var p=exp?bk[k]/exp*100:0;return '<div class="item"><div class="row between"><span>'+esc(k)+'</span><b>'+money(bk[k])+' · '+Math.round(p)+'%</b></div><div class="bar"><i style="width:'+p+'%"></i></div></div>'}).join("")+'</div>';
   return h;
 }
 
 function mrow(ic,t,p){return '<button class="mrow" data-a="page" data-p="'+p+'"><span class="mi">'+ic+'</span><span>'+t+'</span><span class="chev">‹</span></button>'}
 function vSettings(){
-  var th=S.theme||"auto";
-  var h='<div class="card" style="padding:6px 14px">'+mrow(SVG.tag,"إدارة التصنيفات","cats")+mrow(SVG.wallet,"إدارة مصادر الدخل","srcs")+'</div>';
-    var curs=[];CTRY.forEach(function(c){if(curs.indexOf(c[1])<0)curs.push(c[1])});if(curs.indexOf("$")<0)curs.push("$");if(curs.indexOf(S.cur)<0)curs.push(S.cur);
-  h+='<div class="card" style="padding:6px 14px">'+(U?"":'<div class="mrow"><span class="mi">'+SVG.globe+'</span><span>الدولة</span><select data-c="country" aria-label="الدولة">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(S.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select></div>');
-  h+='<div class="mrow"><span class="mi">'+SVG.coin+'</span><span>العملة</span><select data-c="cur" aria-label="العملة">'+curs.map(function(c){return '<option'+(S.cur===c?" selected":"")+'>'+c+'</option>'}).join("")+'</select></div></div>';
+  var h='<div class="card" style="padding:6px 14px">'+mrow(SVG.tag,"إدارة أبواب الصرف","cats")+mrow(SVG.wallet,"إدارة مصادر الدخل","srcs")+'</div>';
+  if(!U)h+='<div class="card" style="padding:6px 14px"><div class="mrow"><span class="mi">'+SVG.globe+'</span><span>الدولة</span><select data-c="country" aria-label="الدولة">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(S.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select></div></div>';
   return h;
 }
+
 function back(t){return '<div class="row between" style="margin-bottom:10px"><h2 style="margin:0">'+t+'</h2><button class="link" data-a="page" data-p="acct">رجوع ›</button></div>'}
 function confirmBox(key,msg,yes){return CONF===key?'<div class="acts"><span class="warn">'+msg+'</span><button class="btn sm danger" data-a="yes">'+yes+'</button><button class="btn sm" data-a="no">إلغاء</button></div>':''}
 function vSrcs(){
@@ -275,7 +290,7 @@ function vSrcs(){
   return h+'<div class="row" style="margin-top:12px"><input id="newsrc" placeholder="اسم مصدر دخل جديد"><button class="btn pri sm" data-a="addsrc">إضافة</button></div></div>';
 }
 function vCats(){
-  var h=back("التصنيفات")+'<div class="card"><p class="lbl">حدد مصادر الدخل التي يمكنها تمويل كل تصنيف.</p>';
+  var h=back("أبواب الصرف")+'<div class="card"><p class="lbl">حدد مصادر الدخل التي يمكنها تمويل كل تصنيف.</p>';
   S.cats.forEach(function(c){h+='<div class="setrow"><div class="row"><input class="ico" data-c="caticon" data-id="'+c.id+'" value="'+esc(c.icon)+'" maxlength="4" aria-label="الرمز"><input data-c="catname" data-id="'+c.id+'" value="'+esc(c.name)+'" aria-label="اسم التصنيف"><button class="btn sm danger" data-a="del" data-k="cat:'+c.id+'">حذف</button></div><div class="links">'+S.sources.map(function(s){return '<label><input type="checkbox" data-c="link" data-cat="'+c.id+'" data-src="'+s.id+'"'+(c.src.indexOf(s.id)>-1?" checked":"")+'>'+esc(s.name)+'</label>'}).join("")+'</div>'+confirmBox("cat:"+c.id,"حذف التصنيف؟ تبقى عملياته في السجل.","نعم، احذف")+'</div>'});
   return h+'<div class="row" style="margin-top:12px"><input id="newcat" placeholder="اسم صنف جديد (مثال: صيانة)"><button class="btn pri sm" data-a="addcat">إضافة</button></div></div>';
 }
@@ -286,18 +301,18 @@ function vBackup(){
 /* ---------- add / edit flows ---------- */
 function openW(kind,t){
   if(!S.sources.length){W={kind:kind,none:true};return}
-  W=t?{kind:t.type,step:1,edit:t.id,err:"",d:{src:t.src,amount:t.amount,cat:t.cat||null,date:t.date,note:t.note||""}}
-    :{kind:kind,step:1,edit:null,err:"",d:{src:kind==="in"?S.sources[0].id:null,amount:"",cat:null,date:today(),note:""}};
+  W=t?{kind:t.type,step:1,edit:t.id,err:"",d:{src:t.src,amount:t.amount,cat:t.cat||null,date:t.date,note:t.note||"",kind:t.kind||""}}
+    :{kind:kind,step:1,edit:null,err:"",d:{src:kind==="in"?S.sources[0].id:null,amount:"",cat:null,date:today(),note:"",kind:""}};
 }
 function stepper(st){var L=["مصدر الدخل","تفاصيل المصروف","مراجعة وحفظ"];return '<div class="stepper">'+L.map(function(l,i){return '<div class="st'+(i+1<st?" done":"")+(i+1===st?" cur":"")+'"><b>'+(i+1).toString()+'</b><span>'+l+'</span></div>'}).join("")+'</div>'}
 function sheet(){
   var el=$("sheet");
   if(BIOP){el.innerHTML='<div class="ov" data-a="biolater-bg"><div class="panel"><div class="bigico" style="background:var(--blue-soft);color:var(--blue)">'+SVG.fp.replace('width="24" height="24"','width="40" height="40"')+'</div><h2 style="text-align:center">تفعيل الدخول بالبصمة؟</h2><p class="lbl" style="text-align:center;margin-bottom:12px">ادخل لاحقًا ببصمتك بدل كتابة كلمة المرور.</p><button class="btn pri wide" data-a="bio-yes">تفعيل</button><button class="btn wide" style="margin-top:8px" data-a="bio-later">لاحقًا</button></div></div>';return}
-  if(MENU){el.innerHTML='<div class="ov" data-a="menuclose"><div class="panel"><h2>ماذا تريد أن تضيف؟</h2><div class="row"><button class="btn pri" style="flex:1;padding:16px" data-a="new" data-k="out">مصروف</button><button class="btn grn" style="flex:1;padding:16px" data-a="new" data-k="in">دخل</button></div></div></div>';return}
+  if(MENU){el.innerHTML='<div class="ov" data-a="menuclose"><div class="panel"><h2>ماذا تريد أن تضيف؟</h2><div class="row"><button class="btn redb" style="flex:1;padding:16px" data-a="new" data-k="out">مصروف</button><button class="btn grnw" style="flex:1;padding:16px" data-a="new" data-k="in">دخل</button></div></div></div>';return}
   if(!W){el.innerHTML="";document.body.style.overflow="";return}
   document.body.style.overflow="hidden";
   var inc=W.kind==="in",title=inc?(W.edit?"تعديل دخل":"إضافة دخل"):(W.edit?"تعديل مصروف":"إضافة مصروف");
-  var h='<div class="fs"><div class="fhead'+(inc?" green":"")+'"><div class="hi"><button data-a="wclose" aria-label="إغلاق">→</button><h2>'+title+'</h2></div></div><div class="fbody">';
+  var h='<div class="fs'+(inc?"":" exp")+'"><div class="fhead'+(inc?" green":" red")+'"><div class="hi"><button data-a="wclose" aria-label="إغلاق">→</button><h2>'+title+'</h2></div></div><div class="fbody">';
   if(W.none){el.innerHTML=h+'<div class="fcard"><p class="empty">أضف مصدر دخل واحدًا على الأقل من الإعدادات ثم إدارة مصادر الدخل.</p><button class="btn wide" data-a="wclose">حسنًا</button></div></div></div>';return}
   var d=W.d;
   if(inc){
@@ -319,11 +334,13 @@ function sheet(){
       h+='<label class="f" for="wamt">المبلغ ('+esc(S.cur)+')</label><input id="wamt" type="number" inputmode="decimal" min="0" step="any" value="'+esc(d.amount)+'" placeholder="أدخل المبلغ">';
       h+='<label class="f" for="wdate">التاريخ</label><input id="wdate" type="date" value="'+esc(d.date)+'">';
       h+='<label class="f" for="wcat">تصنيف المصروف</label><select id="wcat"><option value="">اختر التصنيف</option>'+cs.map(function(c){return '<option value="'+c.id+'"'+(d.cat===c.id?" selected":"")+'>'+esc(c.icon+" "+c.name)+'</option>'}).join("")+'</select>';
-      if(!cs.length)h+='<p class="warn">لا توجد تصنيفات مرتبطة بهذا المصدر. اربطها من الإعدادات ثم إدارة التصنيفات.</p>';
+      if(!cs.length)h+='<p class="warn">لا توجد تصنيفات مرتبطة بهذا المصدر. اربطها من حسابي ثم إدارة أبواب الصرف.</p>';
+      var kl=kinds().slice();if(d.kind&&kl.indexOf(d.kind)<0)kl.push(d.kind);
+      h+='<label class="f" for="wkind">الفئة (اختيارية)</label><select id="wkind" data-c="wkind"><option value="">بدون فئة</option>'+kl.map(function(k){return '<option'+(d.kind===k?" selected":"")+'>'+esc(k)+'</option>'}).join("")+'<option value="__new">＋ إضافة فئة جديدة...</option></select><div id="wkrow" style="display:none;margin-top:8px"><input id="wnewkind" maxlength="30" placeholder="اسم الفئة الجديدة"></div>';
       h+='<label class="f" for="wnote">ملاحظات (اختيارية)</label><input id="wnote" maxlength="80" placeholder="اكتب ملاحظة إن وجدت" value="'+esc(d.note)+'">';
     }
     if(st===3){
-      h+='<h2>مراجعة البيانات</h2><div class="sum"><div><span>مصدر الدخل</span><b>'+esc(sname(d.src))+'</b></div><div><span>المبلغ</span><b>'+money(d.amount)+'</b></div><div><span>التصنيف</span><b>'+esc(cname(d.cat))+'</b></div><div><span>التاريخ</span><b>'+fdate(d.date)+'</b></div><div><span>ملاحظات</span><b>'+esc(d.note||"—")+'</b></div></div>';
+      h+='<h2>مراجعة البيانات</h2><div class="sum"><div><span>مصدر الدخل</span><b>'+esc(sname(d.src))+'</b></div><div><span>المبلغ</span><b>'+money(d.amount)+'</b></div><div><span>التصنيف</span><b>'+esc(cname(d.cat))+'</b></div>'+(d.kind?'<div><span>الفئة</span><b>'+esc(d.kind)+'</b></div>':'')+'<div><span>التاريخ</span><b>'+fdate(d.date)+'</b></div><div><span>ملاحظات</span><b>'+esc(d.note||"—")+'</b></div></div>';
       if(!W.edit&&d.amount>srcBalance(d.src))h+='<p class="warn">المبلغ أكبر من الرصيد الحالي لهذا المصدر.</p>';
     }
     h+='<p class="err" role="alert">'+esc(W.err)+'</p>';
@@ -338,7 +355,9 @@ function readStep(){
   if(st===2){var v=parseFloat($("wamt").value);d.date=$("wdate").value;d.cat=$("wcat").value||null;d.note=$("wnote").value.trim();
     if(!(v>0)){W.err="أدخل مبلغًا أكبر من صفر.";d.amount=$("wamt").value;return false}d.amount=v;
     if(!d.date){W.err="اختر التاريخ.";return false}
-    if(!d.cat){W.err="اختر تصنيف المصروف.";return false}}
+    if(!d.cat){W.err="اختر تصنيف المصروف.";return false}
+    var kv=$("wkind").value,kn=$("wnewkind")?$("wnewkind").value.trim():"";
+    if(kv==="__new"){if(!kn){W.err="اكتب اسم الفئة الجديدة أو اختر فئة من القائمة.";return false}if(!S.kinds)S.kinds=KINDS.slice();if(S.kinds.indexOf(kn)<0){S.kinds.push(kn);save()}d.kind=kn}else d.kind=kv;}
   return true;
 }
 function commit(t){if(W.edit){S.tx=S.tx.map(function(x){return x.id===W.edit?t:x})}else S.tx.push(t);save()}
@@ -352,19 +371,21 @@ document.addEventListener("click",function(e){
   if(a==="login"){doLogin();return}
   if(a==="signup"){doSignup();return}
   if(a==="biologin"){bioLogin();return}
-  if(a==="pwt"){var ip=$(id);ip.type=ip.type==="password"?"text":"password";el.textContent=ip.type==="password"?"إظهار":"إخفاء";return}
+  if(a==="pwt"){var ip=$(id);ip.type=ip.type==="password"?"text":"password";el.innerHTML=ip.type==="password"?EYE:EYEOFF;el.setAttribute("aria-label",ip.type==="password"?"إظهار كلمة المرور":"إخفاء كلمة المرور");return}
   if(a==="logout"){signOut();return}
   if(a==="acct-save"){acctSave();return}
   if(a==="pw-change"){pwChange();return}
   if(a==="bio-on"||a==="bio-yes"){bioEnable();return}
   if(a==="bio-off"){bioDisable();return}
   if(a==="bio-later"||a==="biolater-bg"){if(a==="biolater-bg"&&e.target!==el)return;if(U){try{localStorage.setItem("mizan-nobio:"+U.id,"1")}catch(x){}}BIOP=false;sheet();return}
+  if(a==="pdedit"){PDEDIT=true;MSG2="";render();return}
+  if(a==="pdcancel"){PDEDIT=false;MSG2="";render();return}
   if(a==="pwtoggle"){PWOPEN=!PWOPEN;render();return}
-  if(a==="thememenu"){THM=!THM;render();return}
+  if(a==="thememenu"){if(THM)closeThm();else{THM=true;render()}return}
   if(a==="menuclose"){if(e.target!==el)return;MENU=false;sheet();return}
   if(a==="menu"){MENU=true;sheet();return}
-  if(a==="theme"){S.theme=el.getAttribute("data-t");THM=false;applyTheme();save();render();return}
-  if(a==="page"){P=el.getAttribute("data-p");CONF="";MSG="";MSG2="";PWOPEN=false;THM=false;render();window.scrollTo(0,0);return}
+  if(a==="theme"){S.theme=el.getAttribute("data-t");applyTheme();save();closeThm();return}
+  if(a==="page"){P=el.getAttribute("data-p");CONF="";MSG="";MSG2="";PWOPEN=false;THM=false;PDEDIT=false;render();window.scrollTo(0,0);return}
   if(a==="new"){MENU=false;openW(k);sheet();return}
   if(a==="edit"){var t=fnd(S.tx,id);if(t){openW(t.type,t);sheet()}return}
   if(a==="filter"){F=el.getAttribute("data-f");render();return}
@@ -391,7 +412,7 @@ document.addEventListener("click",function(e){
   if(a==="wnext"){if(readStep())W.step++;sheet();return}
   if(a==="wback"){W.step--;W.err="";sheet();return}
   if(a==="saveout"){var d=W.d;if(!d.src||!d.cat||!(d.amount>0)){W.err="أكمل الخطوات الناقصة أولًا.";sheet();return}
-    commit({id:W.edit||uid(),type:"out",src:d.src,cat:d.cat,amount:d.amount,date:d.date,note:d.note});W=null;sheet();render();return}
+    commit({id:W.edit||uid(),type:"out",src:d.src,cat:d.cat,amount:d.amount,date:d.date,note:d.note,kind:d.kind||""});W=null;sheet();render();return}
   if(a==="savein"){var am=parseFloat($("iamt").value),dt=$("idate").value;W.d.src=$("isrc").value;W.d.date=dt;W.d.note=$("inote").value;
     if(!(am>0)){W.err="أدخل مبلغًا أكبر من صفر.";sheet();return}
     if(!dt){W.err="اختر التاريخ.";sheet();return}
@@ -402,6 +423,8 @@ document.addEventListener("change",function(e){
   var c=e.target.getAttribute("data-c");if(!c)return;
   var id=e.target.getAttribute("data-id"),v=e.target.value.trim();
   if(c==="sgc"){AC=e.target.value;var dt=$("dialtxt");if(dt)dt.textContent=DIAL[e.target.value]||"";return}
+  if(c==="wkind"){var kr=$("wkrow");if(kr)kr.style.display=e.target.value==="__new"?"block":"none";return}
+  if(c==="biotog"){if(e.target.checked)bioEnable();else bioDisable();return}
   if(c==="lm"){LM=e.target.value;render();return}
   if(c==="country"){S.country=e.target.value;for(var q=0;q<CTRY.length;q++)if(CTRY[q][0]===S.country){S.cur=CTRY[q][1];break}save();render();return}
   if(c==="cur"){S.cur=e.target.value;save();render();return}
@@ -429,6 +452,11 @@ var SB_URL="https://vkshtvnvbjojxpsnmroh.supabase.co";
 var SB_KEY="sb_publishable_NAZf_rAzumL1CQd96885bQ_joGvoegz";
 var U=null,G=false,AV="login",BIOK=false,BIOP=false,MSG2="",AC="ليبيا",BOOT=false,LOCK=false,SES=null,PT=null,TT=null;
 var DIAL={"ليبيا":"+218","مصر":"+20","تونس":"+216","الجزائر":"+213","المغرب":"+212","موريتانيا":"+222","السعودية":"+966","الإمارات":"+971","الكويت":"+965","قطر":"+974","البحرين":"+973","عُمان":"+968","الأردن":"+962","فلسطين":"+970","لبنان":"+961","سوريا":"+963","العراق":"+964","اليمن":"+967","السودان":"+249","الصومال":"+252","جيبوتي":"+253","جزر القمر":"+269"};
+var KINDS=["مواد غذائية","خضار وفواكه","لحوم ودواجن","مشروبات","منظفات","مواد بناء","ملابس","وقود","مواصلات","فواتير","صحة وأدوية","تعليم","اتصالات","ترفيه","سفر","أخرى"];
+function kinds(){return S.kinds||KINDS}
+var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYEOFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function closeThm(){var e=document.querySelector(".thm");if(e){e.classList.add("out");setTimeout(function(){THM=false;render()},170)}else{THM=false;render()}}
 function rnd(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return a}
 function b64(buf){var a=new Uint8Array(buf),t="";for(var i=0;i<a.length;i++)t+=String.fromCharCode(a[i]);return btoa(t)}
 function unb64(t){var q=atob(t),a=new Uint8Array(q.length);for(var i=0;i<q.length;i++)a[i]=q.charCodeAt(i);return a}
@@ -444,6 +472,7 @@ function fixS(){
   if(!S.sources||!S.cats||!S.tx){S=def()}
   S.sources.forEach(function(x,i){if(!x.icon)x.icon=ISRC[i%ISRC.length]});S.cats.forEach(function(x,i){if(!x.icon)x.icon=ICAT[i%ICAT.length]});
   if(!S.theme)S.theme="auto";if(!S.country)S.country="ليبيا";if(!S.cur)S.cur=currencyOf(S.country);
+  if(!S.kinds)S.kinds=KINDS.slice();
 }
 
 /* ---------- طبقة الاتصال بـ Supabase (REST مباشرة) ---------- */
@@ -508,7 +537,7 @@ function vAuth(){
   if(sg)h+='<label class="f" for="sgn">الاسم</label><input id="sgn" maxlength="40" autocomplete="name">';
   h+='<label class="f" for="sgc">الدولة</label><select id="sgc" data-c="sgc">'+dialOpts(cn)+'</select>';
   h+='<label class="f" for="aphone">رقم الهاتف</label><div class="row"><span class="pfx" id="dialtxt" dir="ltr">'+DIAL[cn]+'</span><input id="aphone" type="tel" inputmode="numeric" dir="ltr" autocomplete="tel-national" placeholder="9XXXXXXXX"></div>';
-  h+='<label class="f" for="apw">كلمة المرور</label><div class="pwrow"><input id="apw" type="password" autocomplete="'+(sg?"new-password":"current-password")+'"><button type="button" class="pwt" data-a="pwt" data-id="apw">إظهار</button></div>';
+  h+='<label class="f" for="apw">كلمة المرور</label><div class="pwrow"><input id="apw" type="password" autocomplete="'+(sg?"new-password":"current-password")+'"><button type="button" class="pwt" data-a="pwt" data-id="apw" aria-label="إظهار كلمة المرور">'+EYE+'</button></div>';
   if(sg){
     h+='<p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p>';
     h+='<label class="f" for="apw2">تأكيد كلمة المرور</label><div class="pwrow"><input id="apw2" type="password" autocomplete="new-password"></div>';
@@ -516,7 +545,7 @@ function vAuth(){
   }
   h+='<p class="err" id="aerr" role="alert"></p>';
   h+='<button class="btn pri wide" data-a="'+(sg?"signup":"login")+'">'+(sg?"إنشاء الحساب":"تسجيل الدخول")+'</button>';
-  if(!sg&&BIOK&&SES&&localStorage.getItem("mizan-bio:"+SES.uid))h+='<button class="btn wide" style="margin-top:8px" data-a="biologin">'+SVG.fp+'الدخول بالبصمة</button>';
+  if(!sg&&BIOK&&SES&&localStorage.getItem("mizan-bio:"+SES.uid))h+='<button class="fpbtn" data-a="biologin" aria-label="الدخول بالبصمة">'+SVG.fp+'</button>';
   h+='<div class="authlinks"><button class="link" data-a="auth-go" data-v="'+(sg?"login":"signup")+'">'+(sg?"لديك حساب؟ سجّل الدخول":"ليس لديك حساب؟ أنشئ حسابًا")+'</button><button class="link" data-a="guest">المتابعة كضيف</button></div></div>';
   return h;
 }
@@ -529,22 +558,24 @@ function acctHead(){
 function vAcct(){
   if(!U)return acctHead()+'<div class="card"><p>أنت تستخدم التطبيق كضيف، وبياناتك محفوظة على هذا الجهاز فقط.</p><button class="btn pri wide" data-a="auth-go" data-v="signup">إنشاء حساب أو تسجيل الدخول</button></div>'+vSettings();
   var ok=MSG2.indexOf("تم")===0;
-  var h=acctHead()+'<div class="card"><div class="row"><div class="avatar">'+esc(U.name.charAt(0))+'</div><div><b>'+esc(U.name)+'</b><div class="lbl" dir="ltr" style="text-align:right">'+esc(U.phone)+'</div></div></div></div>';
+  var h=acctHead()+'<div class="card"><div class="row"><div class="avatar">'+esc(U.name.charAt(0))+'</div><div><b>'+esc(U.name)+'</b><div class="lbl" dir="ltr" style="text-align:right">'+esc("0"+U.phone)+'</div></div></div></div>';
   if(MSG2)h+='<p class="'+(ok?"okm":"err")+'" role="alert">'+esc(MSG2)+'</p>';
   h+='<div class="card" style="padding:6px 14px">'+mrow(SVG.user,"البيانات الشخصية","pdata")+'</div>';
   h+=vSettings();
-  h+='<div class="card"><h2>الدخول بالبصمة</h2>';
-  if(!BIOK)h+='<p class="lbl">الجهاز أو المتصفح الحالي لا يدعم البصمة.</p>';
-  else if(bioOn())h+='<p class="lbl">تظهر البصمة في شاشة الدخول، ويُقفل التطبيق ويُفتح ببصمتك على هذا الجهاز.</p><button class="btn wide" data-a="bio-off">إيقاف البصمة</button>';
-  else h+='<p class="lbl">ادخل ببصمتك بدل كلمة المرور على هذا الجهاز.</p><button class="btn pri wide" data-a="bio-on">'+SVG.fp+'تفعيل الدخول بالبصمة</button>';
-  return h+'</div><button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
+  h+='<div class="card" style="padding:6px 14px"><div class="mrow"><span class="mi">'+SVG.fp+'</span><span>البصمة'+(BIOK?'':'<small class="lbl" style="display:block">غير مدعومة على هذا الجهاز</small>')+'</span><label class="sw bio"><input type="checkbox" data-c="biotog" aria-label="البصمة"'+(bioOn()?" checked":"")+(BIOK?"":" disabled")+'></label></div></div>';
+  return h+'<button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
 }
+var PDEDIT=false;
 function vPdata(){
   var h=back("البيانات الشخصية");
   if(!U)return h+'<div class="card"><p class="lbl">سجّل الدخول لتعديل بياناتك.</p></div>';
   var ok=MSG2.indexOf("تم")===0;
   if(MSG2)h+='<p class="'+(ok?"okm":"err")+'" role="alert">'+esc(MSG2)+'</p>';
-  h+='<div class="card"><label class="f" for="pn" style="margin-top:0">الاسم</label><input id="pn" maxlength="40" value="'+esc(U.name)+'"><label class="f" for="pc">الدولة</label><select id="pc">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(U.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select><label class="f" for="pe">البريد الإلكتروني (اختياري)</label><input id="pe" type="email" dir="ltr" value="'+esc(U.email||"")+'"><button class="btn pri wide" style="margin-top:12px" data-a="acct-save">حفظ التغييرات</button></div>';
+  if(!PDEDIT){
+    h+='<div class="card">'+[["الاسم",esc(U.name)],["الدولة",esc(U.country)],["رقم الهاتف",'<span dir="ltr">'+esc("0"+U.phone)+'</span>'],["البريد الإلكتروني",U.email?'<span dir="ltr">'+esc(U.email)+'</span>':"—"]].map(function(r){return '<div class="pdrow"><span class="lbl">'+r[0]+'</span><b>'+r[1]+'</b></div>'}).join("")+'<button class="btn pri wide" style="margin-top:12px" data-a="pdedit">تعديل البيانات</button></div>';
+  }else{
+    h+='<div class="card"><label class="f" for="pn" style="margin-top:0">الاسم</label><input id="pn" maxlength="40" value="'+esc(U.name)+'"><label class="f" for="pc">الدولة</label><select id="pc">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(U.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select><label class="f" for="pph">رقم الهاتف (لا يمكن تغييره)</label><input id="pph" dir="ltr" value="'+esc("0"+U.phone)+'" disabled><label class="f" for="pe">البريد الإلكتروني (اختياري)</label><input id="pe" type="email" dir="ltr" value="'+esc(U.email||"")+'"><div class="row" style="margin-top:12px"><button class="btn pri" style="flex:1" data-a="acct-save">حفظ</button><button class="btn" style="flex:1" data-a="pdcancel">إلغاء</button></div></div>';
+  }
   var lk='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   h+='<div class="card" style="padding:6px 14px"><button class="mrow" data-a="pwtoggle" aria-expanded="'+PWOPEN+'"><span class="mi">'+lk+'</span><span>تغيير كلمة المرور</span><span class="chev">'+(PWOPEN?"⌃":"‹")+'</span></button>';
   if(PWOPEN)h+='<div style="padding:0 4px 12px"><label class="f" for="opw" style="margin-top:4px">كلمة المرور الحالية</label><input id="opw" type="password" autocomplete="current-password"><label class="f" for="npw">كلمة المرور الجديدة</label><input id="npw" type="password" autocomplete="new-password"><p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p><button class="btn pri wide" style="margin-top:12px" data-a="pw-change">حفظ كلمة المرور</button></div>';
@@ -603,7 +634,7 @@ async function acctSave(){
     var t=await tok();
     await sb("/rest/v1/profiles?id=eq."+U.id,{m:"PATCH",tok:t,prefer:"return=minimal",b:{name:n,country:c,email:em}});
     U.name=n;U.email=em;if(U.country!==c){U.country=c;S.country=c;S.cur=currencyOf(c);save()}
-    MSG2="تم حفظ التغييرات.";
+    MSG2="تم حفظ التغييرات.";PDEDIT=false;
   }catch(e){MSG2="تعذّر الحفظ: "+e.message}
   render();
 }
