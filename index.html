@@ -143,6 +143,11 @@ textarea{min-height:90px;font-size:.8rem;direction:ltr;text-align:left}
 .btn svg{vertical-align:middle;margin-inline-end:6px}
 .authlinks{display:flex;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap}
 #toast{position:fixed;inset-inline:16px;bottom:96px;background:#0f1f3d;color:#fff;padding:10px 14px;border-radius:12px;z-index:50;display:none;text-align:center;font-size:.9rem}
+.thmwrap{position:relative;margin-bottom:10px}
+.thmbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--blue);display:grid;place-items:center}
+.thm{position:absolute;inset-inline-end:0;top:48px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;display:flex;gap:6px;z-index:6;box-shadow:0 6px 18px rgba(0,20,80,.2)}
+.thm button{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);display:grid;place-items:center}
+.thm button.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
 </style>
 </head>
 <body>
@@ -257,8 +262,7 @@ function mrow(ic,t,p){return '<button class="mrow" data-a="page" data-p="'+p+'">
 function vSettings(){
   var th=S.theme||"auto";
   var h='<div class="card" style="padding:6px 14px">'+mrow(SVG.tag,"إدارة التصنيفات","cats")+mrow(SVG.wallet,"إدارة مصادر الدخل","srcs")+'</div>';
-  h+='<div class="card"><h2>المظهر</h2><div class="seg" role="radiogroup" aria-label="المظهر">'+[["light","فاتح","sun"],["dark","داكن","moon"],["auto","حسب الجهاز","auto"]].map(function(o){return '<button role="radio" aria-checked="'+(th===o[0])+'" class="'+(th===o[0]?"on":"")+'" data-a="theme" data-t="'+o[0]+'">'+SVG[o[2]]+'<span>'+o[1]+'</span></button>'}).join("")+'</div></div>';
-  var curs=[];CTRY.forEach(function(c){if(curs.indexOf(c[1])<0)curs.push(c[1])});if(curs.indexOf("$")<0)curs.push("$");if(curs.indexOf(S.cur)<0)curs.push(S.cur);
+    var curs=[];CTRY.forEach(function(c){if(curs.indexOf(c[1])<0)curs.push(c[1])});if(curs.indexOf("$")<0)curs.push("$");if(curs.indexOf(S.cur)<0)curs.push(S.cur);
   h+='<div class="card" style="padding:6px 14px">'+(U?"":'<div class="mrow"><span class="mi">'+SVG.globe+'</span><span>الدولة</span><select data-c="country" aria-label="الدولة">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(S.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select></div>');
   h+='<div class="mrow"><span class="mi">'+SVG.coin+'</span><span>العملة</span><select data-c="cur" aria-label="العملة">'+curs.map(function(c){return '<option'+(S.cur===c?" selected":"")+'>'+c+'</option>'}).join("")+'</select></div></div>';
   return h;
@@ -355,10 +359,12 @@ document.addEventListener("click",function(e){
   if(a==="bio-on"||a==="bio-yes"){bioEnable();return}
   if(a==="bio-off"){bioDisable();return}
   if(a==="bio-later"||a==="biolater-bg"){if(a==="biolater-bg"&&e.target!==el)return;if(U){try{localStorage.setItem("mizan-nobio:"+U.id,"1")}catch(x){}}BIOP=false;sheet();return}
+  if(a==="pwtoggle"){PWOPEN=!PWOPEN;render();return}
+  if(a==="thememenu"){THM=!THM;render();return}
   if(a==="menuclose"){if(e.target!==el)return;MENU=false;sheet();return}
   if(a==="menu"){MENU=true;sheet();return}
-  if(a==="theme"){S.theme=el.getAttribute("data-t");applyTheme();save();render();return}
-  if(a==="page"){P=el.getAttribute("data-p");CONF="";MSG="";MSG2="";render();window.scrollTo(0,0);return}
+  if(a==="theme"){S.theme=el.getAttribute("data-t");THM=false;applyTheme();save();render();return}
+  if(a==="page"){P=el.getAttribute("data-p");CONF="";MSG="";MSG2="";PWOPEN=false;THM=false;render();window.scrollTo(0,0);return}
   if(a==="new"){MENU=false;openW(k);sheet();return}
   if(a==="edit"){var t=fnd(S.tx,id);if(t){openW(t.type,t);sheet()}return}
   if(a==="filter"){F=el.getAttribute("data-f");render();return}
@@ -409,9 +415,9 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(MENU){ME
 function render(){
   document.body.classList.toggle("noauth",!U&&!G);
   if(!U&&!G){$("app").innerHTML=BOOT?vBoot():(LOCK?vLock():vAuth());$("dp").textContent=new Date().toLocaleDateString("ar-u-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});return}
-  var f={home:vHome,log:vLog,rep:vRep,more:vAcct,srcs:vSrcs,cats:vCats,acct:vAcct}[P];
+  var f={home:vHome,log:vLog,rep:vRep,more:vAcct,srcs:vSrcs,cats:vCats,acct:vAcct,pdata:vPdata}[P];
   $("app").innerHTML=f();
-  var act=(P==="srcs"||P==="cats"||P==="backup")?"acct":P,b=$("nav").children;
+  var act=(P==="srcs"||P==="cats"||P==="backup"||P==="pdata")?"acct":P,b=$("nav").children;
   for(var i=0;i<b.length;i++)b[i].classList.toggle("on",b[i].getAttribute("data-p")===act);
   $("dp").textContent=new Date().toLocaleDateString("ar-u-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
@@ -510,23 +516,39 @@ function vAuth(){
   }
   h+='<p class="err" id="aerr" role="alert"></p>';
   h+='<button class="btn pri wide" data-a="'+(sg?"signup":"login")+'">'+(sg?"إنشاء الحساب":"تسجيل الدخول")+'</button>';
+  if(!sg&&BIOK&&SES&&localStorage.getItem("mizan-bio:"+SES.uid))h+='<button class="btn wide" style="margin-top:8px" data-a="biologin">'+SVG.fp+'الدخول بالبصمة</button>';
   h+='<div class="authlinks"><button class="link" data-a="auth-go" data-v="'+(sg?"login":"signup")+'">'+(sg?"لديك حساب؟ سجّل الدخول":"ليس لديك حساب؟ أنشئ حسابًا")+'</button><button class="link" data-a="guest">المتابعة كضيف</button></div></div>';
   return h;
 }
 function bioOn(){return !!(U&&localStorage.getItem("mizan-bio:"+U.id))}
+var PWOPEN=false,THM=false;
+function acctHead(){
+  var cur=S.theme||"auto";
+  return '<div class="row between thmwrap"><h2 style="margin:0">حسابي</h2><button class="thmbtn" data-a="thememenu" aria-label="المظهر" aria-expanded="'+THM+'">'+SVG.moon+'</button>'+(THM?'<div class="thm" role="radiogroup" aria-label="المظهر">'+[["light","فاتح","sun"],["dark","داكن","moon"],["auto","حسب الجهاز","auto"]].map(function(o){return '<button role="radio" aria-checked="'+(cur===o[0])+'" aria-label="'+o[1]+'" title="'+o[1]+'" class="'+(cur===o[0]?"on":"")+'" data-a="theme" data-t="'+o[0]+'">'+SVG[o[2]]+'</button>'}).join("")+'</div>':'')+'</div>';
+}
 function vAcct(){
-  if(!U)return '<h2>حسابي</h2><div class="card"><p>أنت تستخدم التطبيق كضيف، وبياناتك محفوظة على هذا الجهاز فقط.</p><button class="btn pri wide" data-a="auth-go" data-v="signup">إنشاء حساب أو تسجيل الدخول</button></div>'+vSettings();
+  if(!U)return acctHead()+'<div class="card"><p>أنت تستخدم التطبيق كضيف، وبياناتك محفوظة على هذا الجهاز فقط.</p><button class="btn pri wide" data-a="auth-go" data-v="signup">إنشاء حساب أو تسجيل الدخول</button></div>'+vSettings();
   var ok=MSG2.indexOf("تم")===0;
-  var h='<h2>حسابي</h2><div class="card"><div class="row"><div class="avatar">'+esc(U.name.charAt(0))+'</div><div><b>'+esc(U.name)+'</b><div class="lbl" dir="ltr" style="text-align:right">'+esc(U.dial+" "+U.phone)+'</div></div></div></div>';
+  var h=acctHead()+'<div class="card"><div class="row"><div class="avatar">'+esc(U.name.charAt(0))+'</div><div><b>'+esc(U.name)+'</b><div class="lbl" dir="ltr" style="text-align:right">'+esc(U.phone)+'</div></div></div></div>';
   if(MSG2)h+='<p class="'+(ok?"okm":"err")+'" role="alert">'+esc(MSG2)+'</p>';
-  h+='<div class="card"><h2>البيانات الشخصية</h2><label class="f" for="pn">الاسم</label><input id="pn" maxlength="40" value="'+esc(U.name)+'"><label class="f" for="pc">الدولة</label><select id="pc">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(U.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select><label class="f" for="pe">البريد الإلكتروني (اختياري)</label><input id="pe" type="email" dir="ltr" value="'+esc(U.email||"")+'"><button class="btn pri wide" style="margin-top:12px" data-a="acct-save">حفظ التغييرات</button></div>';
+  h+='<div class="card" style="padding:6px 14px">'+mrow(SVG.user,"البيانات الشخصية","pdata")+'</div>';
   h+=vSettings();
   h+='<div class="card"><h2>الدخول بالبصمة</h2>';
   if(!BIOK)h+='<p class="lbl">الجهاز أو المتصفح الحالي لا يدعم البصمة.</p>';
-  else if(bioOn())h+='<p class="lbl">التطبيق يُقفل ويُفتح ببصمتك على هذا الجهاز.</p><button class="btn wide" data-a="bio-off">إيقاف البصمة</button>';
-  else h+='<p class="lbl">اقفل التطبيق على هذا الجهاز وافتحه ببصمتك.</p><button class="btn pri wide" data-a="bio-on">'+SVG.fp+'تفعيل الدخول بالبصمة</button>';
-  h+='</div><div class="card"><h2>تغيير كلمة المرور</h2><label class="f" for="opw">كلمة المرور الحالية</label><input id="opw" type="password" autocomplete="current-password"><label class="f" for="npw">كلمة المرور الجديدة</label><input id="npw" type="password" autocomplete="new-password"><p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p><button class="btn wide" style="margin-top:12px" data-a="pw-change">تغيير كلمة المرور</button></div>';
-  return h+'<button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
+  else if(bioOn())h+='<p class="lbl">تظهر البصمة في شاشة الدخول، ويُقفل التطبيق ويُفتح ببصمتك على هذا الجهاز.</p><button class="btn wide" data-a="bio-off">إيقاف البصمة</button>';
+  else h+='<p class="lbl">ادخل ببصمتك بدل كلمة المرور على هذا الجهاز.</p><button class="btn pri wide" data-a="bio-on">'+SVG.fp+'تفعيل الدخول بالبصمة</button>';
+  return h+'</div><button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
+}
+function vPdata(){
+  var h=back("البيانات الشخصية");
+  if(!U)return h+'<div class="card"><p class="lbl">سجّل الدخول لتعديل بياناتك.</p></div>';
+  var ok=MSG2.indexOf("تم")===0;
+  if(MSG2)h+='<p class="'+(ok?"okm":"err")+'" role="alert">'+esc(MSG2)+'</p>';
+  h+='<div class="card"><label class="f" for="pn" style="margin-top:0">الاسم</label><input id="pn" maxlength="40" value="'+esc(U.name)+'"><label class="f" for="pc">الدولة</label><select id="pc">'+CTRY.map(function(c){return '<option value="'+c[0]+'"'+(U.country===c[0]?" selected":"")+'>'+c[0]+'</option>'}).join("")+'</select><label class="f" for="pe">البريد الإلكتروني (اختياري)</label><input id="pe" type="email" dir="ltr" value="'+esc(U.email||"")+'"><button class="btn pri wide" style="margin-top:12px" data-a="acct-save">حفظ التغييرات</button></div>';
+  var lk='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  h+='<div class="card" style="padding:6px 14px"><button class="mrow" data-a="pwtoggle" aria-expanded="'+PWOPEN+'"><span class="mi">'+lk+'</span><span>تغيير كلمة المرور</span><span class="chev">'+(PWOPEN?"⌃":"‹")+'</span></button>';
+  if(PWOPEN)h+='<div style="padding:0 4px 12px"><label class="f" for="opw" style="margin-top:4px">كلمة المرور الحالية</label><input id="opw" type="password" autocomplete="current-password"><label class="f" for="npw">كلمة المرور الجديدة</label><input id="npw" type="password" autocomplete="new-password"><p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p><button class="btn pri wide" style="margin-top:12px" data-a="pw-change">حفظ كلمة المرور</button></div>';
+  return h+'</div>';
 }
 
 /* ---------- العمليات ---------- */
@@ -569,8 +591,9 @@ async function doSignup(){
   }
 }
 async function signOut(){
-  try{if(SES)await sb("/auth/v1/logout",{m:"POST",tok:SES.at})}catch(e){}
-  clearSes();U=null;G=false;LOCK=false;BOOT=false;AV="login";MSG2="";P="home";load();render();window.scrollTo(0,0);
+  var keep=U&&localStorage.getItem("mizan-bio:"+U.id);
+  if(!keep){try{if(SES)await sb("/auth/v1/logout",{m:"POST",tok:SES.at})}catch(e){}clearSes()}
+  U=null;G=false;LOCK=false;BOOT=false;AV="login";MSG2="";P="home";load();render();window.scrollTo(0,0);
 }
 async function acctSave(){
   var n=$("pn").value.trim(),c=$("pc").value,em=$("pe").value.trim();
@@ -591,7 +614,7 @@ async function pwChange(){
     await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:emailOf(U.dial,U.phone),password:o}});
   }catch(e){MSG2="كلمة المرور الحالية غير صحيحة.";render();return}
   try{
-    var t=await tok();await sb("/auth/v1/user",{m:"PUT",tok:t,b:{password:n}});MSG2="تم تغيير كلمة المرور.";
+    var t=await tok();await sb("/auth/v1/user",{m:"PUT",tok:t,b:{password:n}});MSG2="تم تغيير كلمة المرور.";PWOPEN=false;
   }catch(e){MSG2="تعذّر تغيير كلمة المرور: "+e.message}
   render();
 }
@@ -616,7 +639,7 @@ async function bioLogin(){
 document.addEventListener("keydown",function(e){
   if(e.key==="Enter"&&!U&&!G&&e.target.tagName==="INPUT"){var b=document.querySelector('[data-a="login"],[data-a="signup"]');if(b)b.click()}
 });
-try{if(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable)PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(v){BIOK=!!v;if(U)render()}).catch(function(){})}catch(e){}
+try{if(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable)PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function(v){BIOK=!!v;if(U||!document.activeElement||document.activeElement.tagName!=="INPUT")render()}).catch(function(){})}catch(e){}
 try{G=localStorage.getItem("mizan-guest")==="1"&&!localStorage.getItem("mizan-ses")}catch(e){}
 load();applyTheme();render();bootCloud();
 </script>
