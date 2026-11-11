@@ -158,11 +158,9 @@ textarea{min-height:90px;font-size:.8rem;direction:ltr;text-align:left}
 .sw.bio input:checked{background:var(--green)}
 .pdrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .pdrow:first-child{border-top:0}
-.thm{transform-origin:21px -27px;animation:thmIn .18s ease-out}
-.thm.out{animation:thmOut .17s ease-in forwards}
-@keyframes thmIn{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
-@keyframes thmOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.2)}}
-@media (prefers-reduced-motion:reduce){.thm,.thm.out{animation:none}}
+.thm{transform-origin:21px -27px;transform:scale(.15);opacity:0;visibility:hidden;pointer-events:none;transition:transform .32s cubic-bezier(.2,.9,.3,1.15),opacity .22s ease,visibility 0s linear .32s}
+.thm.open{transform:scale(1);opacity:1;visibility:visible;pointer-events:auto;transition:transform .32s cubic-bezier(.2,.9,.3,1.15),opacity .22s ease,visibility 0s}
+@media (prefers-reduced-motion:reduce){.thm,.thm.open{transition:none}}
 </style>
 </head>
 <body>
@@ -381,7 +379,7 @@ document.addEventListener("click",function(e){
   if(a==="pdedit"){PDEDIT=true;MSG2="";render();return}
   if(a==="pdcancel"){PDEDIT=false;MSG2="";render();return}
   if(a==="pwtoggle"){PWOPEN=!PWOPEN;render();return}
-  if(a==="thememenu"){if(THM)closeThm();else{THM=true;render()}return}
+  if(a==="thememenu"){if(THM)closeThm();else{THM=true;var te=document.querySelector(".thm");if(te)te.classList.add("open");el.setAttribute("aria-expanded","true")}return}
   if(a==="menuclose"){if(e.target!==el)return;MENU=false;sheet();return}
   if(a==="menu"){MENU=true;sheet();return}
   if(a==="theme"){S.theme=el.getAttribute("data-t");applyTheme();save();closeThm();return}
@@ -399,6 +397,7 @@ document.addEventListener("click",function(e){
     if(ty==="src"){S.sources=S.sources.filter(function(x){return x.id!==i});S.cats.forEach(function(c){c.src=c.src.filter(function(x){return x!==i})})}
     if(ty==="cat")S.cats=S.cats.filter(function(x){return x.id!==i});
     if(CONF==="import"){try{var o=JSON.parse($("imp").value);if(!(o&&Array.isArray(o.sources)&&Array.isArray(o.cats)&&Array.isArray(o.tx)))throw 0;S=o;load2();MSG="تم استيراد البيانات."}catch(x){MSG="النص غير صالح. تأكد من لصق النسخة كاملة."}}
+    if(CONF==="wipe"){var kt=S.theme,kc=S.country,kr=S.cur;S=def();S.theme=kt;S.country=kc;S.cur=kr;if(typeof fixS==="function")fixS()}
     CONF="";save();render();return}
   if(a==="addsrc"){var n=$("newsrc").value.trim();if(n){var s={id:uid(),name:n,icon:ISRC[S.sources.length%ISRC.length]};S.sources.push(s);S.cats.forEach(function(c){c.src.push(s.id)});save();render()}return}
   if(a==="addcat"){var n2=$("newcat").value.trim();if(n2){S.cats.push({id:uid(),name:n2,icon:ICAT[S.cats.length%ICAT.length],src:S.sources.map(function(s){return s.id})});save();render()}return}
@@ -456,7 +455,7 @@ var KINDS=["مواد غذائية","خضار وفواكه","لحوم ودواج�
 function kinds(){return S.kinds||KINDS}
 var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 var EYEOFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.6 0 3-.4 4.3-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
-function closeThm(){var e=document.querySelector(".thm");if(e){e.classList.add("out");setTimeout(function(){THM=false;render()},170)}else{THM=false;render()}}
+function closeThm(){THM=false;var e=document.querySelector(".thm");if(e)e.classList.remove("open");var b=document.querySelector(".thmbtn");if(b)b.setAttribute("aria-expanded","false");setTimeout(function(){if(!THM)render()},320)}
 function rnd(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return a}
 function b64(buf){var a=new Uint8Array(buf),t="";for(var i=0;i<a.length;i++)t+=String.fromCharCode(a[i]);return btoa(t)}
 function unb64(t){var q=atob(t),a=new Uint8Array(q.length);for(var i=0;i<q.length;i++)a[i]=q.charCodeAt(i);return a}
@@ -553,7 +552,7 @@ function bioOn(){return !!(U&&localStorage.getItem("mizan-bio:"+U.id))}
 var PWOPEN=false,THM=false;
 function acctHead(){
   var cur=S.theme||"auto";
-  return '<div class="row between thmwrap"><h2 style="margin:0">حسابي</h2><button class="thmbtn" data-a="thememenu" aria-label="المظهر" aria-expanded="'+THM+'">'+SVG.moon+'</button>'+(THM?'<div class="thm" role="radiogroup" aria-label="المظهر">'+[["light","فاتح","sun"],["dark","داكن","moon"],["auto","حسب الجهاز","auto"]].map(function(o){return '<button role="radio" aria-checked="'+(cur===o[0])+'" aria-label="'+o[1]+'" title="'+o[1]+'" class="'+(cur===o[0]?"on":"")+'" data-a="theme" data-t="'+o[0]+'">'+SVG[o[2]]+'</button>'}).join("")+'</div>':'')+'</div>';
+  return '<div class="row between thmwrap"><h2 style="margin:0">حسابي</h2><button class="thmbtn" data-a="thememenu" aria-label="المظهر" aria-expanded="'+THM+'">'+SVG.moon+'</button>'+('<div class="thm'+(THM?" open":"")+'" role="radiogroup" aria-label="المظهر">'+[["light","فاتح","sun"],["dark","داكن","moon"],["auto","حسب الجهاز","auto"]].map(function(o){return '<button role="radio" aria-checked="'+(cur===o[0])+'" aria-label="'+o[1]+'" title="'+o[1]+'" class="'+(cur===o[0]?"on":"")+'" data-a="theme" data-t="'+o[0]+'">'+SVG[o[2]]+'</button>'}).join("")+'</div>')+'</div>';
 }
 function vAcct(){
   if(!U)return acctHead()+'<div class="card"><p>أنت تستخدم التطبيق كضيف، وبياناتك محفوظة على هذا الجهاز فقط.</p><button class="btn pri wide" data-a="auth-go" data-v="signup">إنشاء حساب أو تسجيل الدخول</button></div>'+vSettings();
@@ -563,6 +562,7 @@ function vAcct(){
   h+='<div class="card" style="padding:6px 14px">'+mrow(SVG.user,"البيانات الشخصية","pdata")+'</div>';
   h+=vSettings();
   h+='<div class="card" style="padding:6px 14px"><div class="mrow"><span class="mi">'+SVG.fp+'</span><span>البصمة'+(BIOK?'':'<small class="lbl" style="display:block">غير مدعومة على هذا الجهاز</small>')+'</span><label class="sw bio"><input type="checkbox" data-c="biotog" aria-label="البصمة"'+(bioOn()?" checked":"")+(BIOK?"":" disabled")+'></label></div></div>';
+  h+='<div class="card"><button class="btn danger wide" data-a="del" data-k="wipe">مسح كل البيانات</button>'+confirmBox("wipe","سيتم مسح كل الدخل والمصروفات وإرجاع المصادر وأبواب الصرف للوضع الأول. لا يمكن التراجع.","نعم، امسح كل شيء")+'</div>';
   return h+'<button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
 }
 var PDEDIT=false;
