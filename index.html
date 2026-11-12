@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ميزان</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1d5bd8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ميزان">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=El+Messiri:wght@700&display=swap">
 <style>
 :root{--bg:#eef4ff;--surface:#fff;--text:#0f1f3d;--muted:#64748b;--line:#dbe5f6;--blue:#1d5bd8;--blue-ink:#fff;--blue-soft:#e4eeff;--green:#16a34a;--red:#dc2626;--ing:#dcfce7;--ingt:#166534;--expg:#fee2e2;--expt:#991b1b;--track:#dbe5f6;
@@ -735,5 +743,6 @@ try{if(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAu
 try{G=localStorage.getItem("mizan-guest")==="1"&&!localStorage.getItem("mizan-ses")}catch(e){}
 load();applyTheme();render();bootCloud();
 </script>
+<script>if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})</script>
 </body>
 </html>
