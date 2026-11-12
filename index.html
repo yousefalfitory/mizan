@@ -194,6 +194,9 @@ textarea{min-height:90px;font-size:.8rem;direction:ltr;text-align:left}
 .sp-sub{opacity:.85;font-size:.9rem}
 @keyframes spIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.sp-in{animation:none}}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:.88rem;line-height:1.7;color:var(--text)}
+.chk input{width:auto;margin-top:5px;flex:none}
+.rkbox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.15rem;letter-spacing:.06em;text-align:center;background:var(--blue-soft);border:1.5px dashed var(--blue);border-radius:12px;padding:16px 8px;margin:12px 0;user-select:all;word-break:break-all}
 </style>
 </head>
 <body>
@@ -341,6 +344,7 @@ function openW(kind,t){
 function stepper(st){var L=["مصدر الدخل","تفاصيل المصروف","مراجعة وحفظ"];return '<div class="stepper">'+L.map(function(l,i){return '<div class="st'+(i+1<st?" done":"")+(i+1===st?" cur":"")+'"><b>'+(i+1).toString()+'</b><span>'+l+'</span></div>'}).join("")+'</div>'}
 function sheet(){
   var el=$("sheet");
+  if(RKSHOW){el.innerHTML='<div class="fs"><div class="fhead"><div class="hi"><h2 style="padding-inline-end:0">مفتاح الاسترداد</h2></div></div><div class="fbody"><div class="fcard"><p><b>احفظ هذا المفتاح الآن.</b> بدونه لا تستطيع استرداد حسابك إذا نسيت كلمة المرور، ولا يظهر مرة أخرى.</p><div class="rkbox" dir="ltr">'+esc(RKSHOW)+'</div><button class="btn wide" data-a="rkcopy">نسخ المفتاح</button><p class="warn" style="margin-top:12px">إذا فقدت كلمة المرور ومفتاح الاسترداد معًا، فستضيع بياناتك نهائيًا ولا يمكن لأحد استرجاعها، وأنت من يتحمل ذلك.</p><label class="chk"><input type="checkbox" id="rkok" data-c="rkok"><span>حفظت مفتاح الاسترداد في مكان آمن.</span></label><button class="btn pri wide" id="rkgo" data-a="rkdone" disabled>متابعة</button></div></div></div>';document.body.style.overflow="hidden";return}
   if(BIOP){el.innerHTML='<div class="ov" data-a="biolater-bg"><div class="panel"><div class="bigico" style="background:var(--blue-soft);color:var(--blue)">'+SVG.fp.replace('width="24" height="24"','width="40" height="40"')+'</div><h2 style="text-align:center">تفعيل الدخول بالبصمة؟</h2><p class="lbl" style="text-align:center;margin-bottom:12px">ادخل لاحقًا ببصمتك بدل كتابة كلمة المرور.</p><button class="btn pri wide" data-a="bio-yes">تفعيل</button><button class="btn wide" style="margin-top:8px" data-a="bio-later">لاحقًا</button></div></div>';return}
   if(MENU){el.innerHTML='<div class="ov" data-a="menuclose"><div class="panel"><h2>ماذا تريد أن تضيف؟</h2><div class="row"><button class="btn redb" style="flex:1;padding:16px" data-a="new" data-k="out">مصروف</button><button class="btn grnw" style="flex:1;padding:16px" data-a="new" data-k="in">دخل</button></div></div></div>';return}
   if(!W){el.innerHTML="";document.body.style.overflow="";return}
@@ -419,6 +423,13 @@ document.addEventListener("click",function(e){
   if(a==="kup"||a==="kdown"){ensureKinds();var ki=+el.getAttribute("data-i"),kj=a==="kup"?ki-1:ki+1;if(kj>=0&&kj<S.kinds.length){var kt0=S.kinds[ki];S.kinds[ki]=S.kinds[kj];S.kinds[kj]=kt0;save();render()}return}
   if(a==="addkind"){var kn0=$("newkind").value.trim();ensureKinds();if(kn0&&S.kinds.indexOf(kn0)<0){S.kinds.push(kn0);save()}render();return}
   if(a==="lcsel"){LSEL=!LSEL;render();return}
+  if(a==="priv"){PRIV=true;render();window.scrollTo(0,0);return}
+  if(a==="privback"){PRIV=false;render();return}
+  if(a==="recover"){doRecover();return}
+  if(a==="rkcopy"){try{navigator.clipboard.writeText(RKSHOW);toast("تم نسخ المفتاح.")}catch(x){toast("اضغط مطولًا على المفتاح لنسخه.")}return}
+  if(a==="rkdone"){if(!$("rkok").checked)return;RKSHOW="";document.body.style.overflow="";startApp();return}
+  if(a==="rkrot"){RKOPEN=!RKOPEN;render();return}
+  if(a==="dorotate"){doRotate();return}
   if(a==="menuclose"){if(e.target!==el)return;MENU=false;sheet();return}
   if(a==="menu"){MENU=true;sheet();return}
   if(a==="theme"){S.theme=el.getAttribute("data-t");try{localStorage.setItem("mizan-theme",S.theme)}catch(x){}applyTheme();save();closeThm();return}
@@ -465,6 +476,7 @@ document.addEventListener("change",function(e){
   if(c==="wkind"){var kr=$("wkrow");if(kr)kr.style.display=e.target.value==="__new"?"block":"none";return}
   if(c==="biotog"){if(e.target.checked)bioEnable();else bioDisable();return}
   if(c==="kindname"){var ix=+e.target.getAttribute("data-i"),nv=e.target.value.trim();ensureKinds();var ov=S.kinds[ix];if(nv&&nv!==ov&&S.kinds.indexOf(nv)<0){S.tx.forEach(function(t){if(t.kind===ov)t.kind=nv});S.kinds[ix]=nv;save()}render();return}
+  if(c==="rkok"){var gb=$("rkgo");if(gb)gb.disabled=!e.target.checked;return}
   if(c==="lm"){LM=e.target.value;render();return}
   if(c==="country"){S.country=e.target.value;for(var q=0;q<CTRY.length;q++)if(CTRY[q][0]===S.country){S.cur=CTRY[q][1];break}save();render();return}
   if(c==="cur"){S.cur=e.target.value;save();render();return}
@@ -477,6 +489,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(MENU){ME
 
 function render(){
   document.body.classList.toggle("noauth",!U&&!G);
+  if(PRIV){$("app").innerHTML=vPrivacy();return}
   if(!U&&!G){$("app").innerHTML=BOOT?vBoot():(LOCK?vLock():vAuth());$("dp").textContent=new Date().toLocaleDateString("ar-u-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});return}
   var f={home:vHome,log:vLog,rep:vRep,more:vAcct,srcs:vSrcs,cats:vCats,acct:vAcct,pdata:vPdata,kinds:vKinds}[P];
   $("app").innerHTML=f();
@@ -563,10 +576,41 @@ async function tok(){
   if(SES.exp-60<Date.now()/1000){var j=await sb("/auth/v1/token?grant_type=refresh_token",{m:"POST",b:{refresh_token:SES.rt}});setSes(j)}
   return SES.at;
 }
+/* ---------- التشفير من طرف العميل ----------
+   المفتاح DEK يُولَّد على الجهاز ويشفّر كل بياناتك. يُغلَّف DEK بمفتاح مشتق من كلمة مرورك،
+   وبنسخة ثانية بمفتاح الاسترداد. كلمة المرور نفسها لا تصل الخادم أبدًا، بل قيمة مشتقة منها. */
+var DEK=null,DEKRAW=null,ENV=null,LOADED=false,RKSHOW="",PRIV=false,RKOPEN=false;
+var te=new TextEncoder(),td=new TextDecoder();
+async function sha(x){return new Uint8Array(await crypto.subtle.digest("SHA-256",x))}
+function cat(a,b){var c=new Uint8Array(a.length+b.length);c.set(a);c.set(b,a.length);return c}
+async function mkOf(pw,email){var k=await crypto.subtle.importKey("raw",te.encode(pw),"PBKDF2",false,["deriveBits"]);return new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:te.encode("mizan:v1:"+email),iterations:250000,hash:"SHA-256"},k,256))}
+async function authOf(mk){return b64(await sha(cat(te.encode("auth|"),mk))).replace(/=+$/,"")}
+async function aesKey(raw){return crypto.subtle.importKey("raw",raw,"AES-GCM",false,["encrypt","decrypt"])}
+async function kekOf(tag,bytes){return aesKey(await sha(cat(te.encode(tag),bytes)))}
+async function encB(key,bytes){var iv=rnd(12),ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,bytes));return {iv:b64(iv),ct:b64(ct)}}
+async function decB(key,o){return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(o.iv)},key,unb64(o.ct)))}
+var B32="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+function rkNew(){return rnd(16)}
+function rkStr(b){var bits="",o="",i;for(i=0;i<b.length;i++)bits+=("00000000"+b[i].toString(2)).slice(-8);bits+="00";for(i=0;i<bits.length;i+=5)o+=B32[parseInt(bits.substr(i,5),2)];return o.match(/.{1,4}/g).join("-")}
+function rkParse(t){var x=String(t||"").toUpperCase().replace(/O/g,"0").replace(/[IL]/g,"1").replace(/[^0-9A-Z]/g,"");if(x.length!==26)return null;var bits="";for(var i=0;i<x.length;i++){var v=B32.indexOf(x[i]);if(v<0)return null;bits+=("00000"+v.toString(2)).slice(-5)}var out=new Uint8Array(16);for(i=0;i<16;i++)out[i]=parseInt(bits.substr(i*8,8),2);return out}
+async function sealData(){var e=await encB(DEK,te.encode(JSON.stringify(S)));return {v:2,wpw:ENV.wpw,iv:e.iv,ct:e.ct}}
+async function openData(env){return JSON.parse(td.decode(await decB(DEK,env)))}
+async function newRecoveryKey(email,ap){
+  var rk=rkNew(),kr=await kekOf("rk|",rk),blob=await encB(kr,te.encode(JSON.stringify({dek:b64(DEKRAW),ap:ap}))),t=await tok();
+  await sb("/rest/v1/recovery_blobs?on_conflict=email",{m:"POST",tok:t,prefer:"resolution=merge-duplicates,return=minimal",b:{email:email,user_id:SES.uid,blob:blob}});
+  RKSHOW=rkStr(rk);
+}
+async function setNewPassword(email,pw){
+  var mk=await mkOf(pw,email),ap=await authOf(mk),kek=await kekOf("enc|",mk),t=await tok();
+  await sb("/auth/v1/user",{m:"PUT",tok:t,b:{password:ap}});
+  ENV.wpw=await encB(kek,DEKRAW);
+  await newRecoveryKey(email,ap);
+  await pushNow();
+}
 function schedulePush(){clearTimeout(PT);PT=setTimeout(pushNow,700)}
 async function pushNow(){
-  if(!U||!SES)return;
-  try{var t=await tok();await sb("/rest/v1/user_data?on_conflict=user_id",{m:"POST",tok:t,prefer:"resolution=merge-duplicates,return=minimal",b:{user_id:U.id,data:S,updated_at:new Date().toISOString()}})}
+  if(!SES||!DEK||!ENV||!LOADED)return;
+  try{var t=await tok(),env=await sealData();await sb("/rest/v1/user_data?on_conflict=user_id",{m:"POST",tok:t,prefer:"resolution=merge-duplicates,return=minimal",b:{user_id:SES.uid,data:env,updated_at:new Date().toISOString()}})}
   catch(e){toast("تعذّر الحفظ في السحابة. تحقق من الاتصال.")}
 }
 async function enter(){
@@ -578,23 +622,28 @@ async function enter(){
     try{await sb("/rest/v1/profiles?on_conflict=id",{m:"POST",tok:t,prefer:"resolution=merge-duplicates,return=minimal",b:p})}catch(e){}
   }
   U={id:uid,name:p.name,country:p.country,dial:p.dial,phone:p.phone,email:p.email||""};
-  var d=await sb("/rest/v1/user_data?select=data&user_id=eq."+uid,{tok:t});
-  if(d&&d.length&&d[0].data&&d[0].data.sources){S=d[0].data}else{S=def();S.country=U.country;S.cur=currencyOf(U.country)}
-  fixS();startApp();
+  if(!DEK){var dk=localStorage.getItem("mizan-dek:"+uid);if(!dk){var er=new Error("NODEK");er.status=401;throw er}DEKRAW=unb64(dk);DEK=await aesKey(DEKRAW)}
+  var d=await sb("/rest/v1/user_data?select=data&user_id=eq."+uid,{tok:t}),env=d&&d[0]&&d[0].data;
+  if(env&&env.v===2){ENV={wpw:env.wpw};try{S=await openData(env)}catch(e){var er2=new Error("DECRYPT");er2.status=401;throw er2}}
+  else{S=def();S.country=U.country;S.cur=currencyOf(U.country);ENV=ENV||{}}
+  fixS();LOADED=true;startApp();
 }
 function startApp(){
   G=false;BOOT=false;LOCK=false;try{localStorage.removeItem("mizan-guest")}catch(e){}
-  applyTheme();P="home";MSG2="";BIOP=BIOK&&!bioOn()&&!localStorage.getItem("mizan-nobio:"+U.id);
+  applyTheme();P="home";MSG2="";
+  if(RKSHOW){render();sheet();return}
+  BIOP=BIOK&&!bioOn()&&!localStorage.getItem("mizan-nobio:"+U.id);
   render();sheet();window.scrollTo(0,0);
 }
 function fail(e){
   BOOT=false;
-  if(e&&(e.status===400||e.status===401||e.status===403)){clearSes();U=null}
+  if(e&&(e.status===400||e.status===401||e.status===403)){try{if(SES)localStorage.removeItem("mizan-dek:"+SES.uid)}catch(x){}clearSes();U=null;LOADED=false;DEK=null;render();aerr("انتهت جلستك. سجّل الدخول من جديد.");return}
   render();aerr("تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.");
 }
 async function bootCloud(){
   try{var r=localStorage.getItem("mizan-ses");if(r)SES=JSON.parse(r)}catch(e){}
   if(!SES)return;
+  if(!localStorage.getItem("mizan-dek:"+SES.uid)){clearSes();render();return}
   if(localStorage.getItem("mizan-bio:"+SES.uid)){LOCK=true;render();return}
   BOOT=true;render();
   try{await enter()}catch(e){fail(e)}
@@ -603,7 +652,12 @@ async function bootCloud(){
 /* ---------- الواجهات ---------- */
 function vBoot(){return '<div class="card"><p class="empty">جاري التحميل...</p></div>'}
 function vLock(){return '<div class="card" style="text-align:center"><div class="bigico" style="background:var(--blue-soft);color:var(--blue)">'+SVG.fp.replace('width="24" height="24"','width="40" height="40"')+'</div><h2>ميزان مقفل</h2><p class="lbl">استخدم بصمتك لفتح حسابك.</p><p class="err" id="aerr" role="alert"></p><button class="btn pri wide" data-a="biologin">فتح بالبصمة</button><button class="btn wide" style="margin-top:8px" data-a="logout">تسجيل الخروج</button></div>'}
+function vRecover(){
+  var cn=LCS||localStorage.getItem("mizan-lc")||"ليبيا";if(!DIAL[cn])cn="ليبيا";
+  return '<div class="card"><h2 style="font-size:1.25rem">استرداد الحساب</h2><p class="lbl">أدخل رقمك ومفتاح الاسترداد الذي حفظته، ثم اختر كلمة مرور جديدة. بياناتك ترجع كما كانت.</p><label class="f" for="sgc">الدولة</label><select id="sgc" data-c="sgc">'+dialOpts(cn)+'</select><label class="f" for="aphone">رقم الهاتف</label><div class="row"><span class="pfx" id="dialtxt" dir="ltr">'+DIAL[cn]+'</span><input id="aphone" type="tel" inputmode="numeric" dir="ltr" placeholder="9XXXXXXXX"></div><label class="f" for="arkey">مفتاح الاسترداد</label><input id="arkey" dir="ltr" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XX"><label class="f" for="apw">كلمة المرور الجديدة</label><div class="pwrow"><input id="apw" type="password" autocomplete="new-password"></div><p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p><label class="f" for="apw2">تأكيد كلمة المرور</label><div class="pwrow"><input id="apw2" type="password" autocomplete="new-password"></div><p class="err" id="aerr" role="alert"></p><button class="btn pri wide" data-a="recover">استرداد الحساب</button><div class="authlinks"><button class="link" data-a="auth-go" data-v="login">رجوع لتسجيل الدخول</button></div></div>';
+}
 function vAuth(){
+  if(AV==="recover")return vRecover();
   var sg=AV==="signup",cn=sg?AC:(LCS||localStorage.getItem("mizan-lc")||"ليبيا");if(!DIAL[cn])cn="ليبيا";
   var h='<div class="card"><div class="row between thmwrap" style="margin-bottom:0"><h2 style="font-size:1.25rem;margin:0">'+(sg?"إنشاء حساب":"تسجيل الدخول")+'</h2>'+themeBtn()+'</div><p class="lbl">'+(sg?"سجّل ببياناتك لتكون مصاريفك في حسابك الشخصي.":"أهلًا بك في ميزان. ادخل برقم هاتفك.")+'</p>';
   if(sg)h+='<label class="f" for="sgn">الاسم</label><input id="sgn" maxlength="40" autocomplete="name">';
@@ -615,12 +669,16 @@ function vAuth(){
     h+='<p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p>';
     h+='<label class="f" for="apw2">تأكيد كلمة المرور</label><div class="pwrow"><input id="apw2" type="password" autocomplete="new-password"></div>';
     h+='<label class="f" for="aem">البريد الإلكتروني (اختياري)</label><input id="aem" type="email" dir="ltr" autocomplete="email" placeholder="name@example.com">';
+    h+='<label class="chk"><input type="checkbox" id="aconsent"><span>أوافق على <button type="button" class="link" data-a="priv" style="padding:0">شروط الخصوصية</button>، وأفهم أن بياناتي مشفرة على جهازي، وأنني إذا فقدت كلمة المرور ومفتاح الاسترداد معًا فستضيع بياناتي نهائيًا ولا يمكن لأحد استرجاعها.</span></label>';
   }
   h+='<p class="err" id="aerr" role="alert"></p>';
   h+='<button class="btn pri wide" data-a="'+(sg?"signup":"login")+'">'+(sg?"إنشاء الحساب":"تسجيل الدخول")+'</button>';
   if(!sg&&BIOK&&SES&&localStorage.getItem("mizan-bio:"+SES.uid))h+='<button class="fpbtn" data-a="biologin" aria-label="الدخول بالبصمة">'+SVG.fp+'</button>';
-  h+='<div class="authlinks"><button class="link" data-a="auth-go" data-v="'+(sg?"login":"signup")+'">'+(sg?"لديك حساب؟ سجّل الدخول":"ليس لديك حساب؟ أنشئ حسابًا")+'</button><button class="link" data-a="guest">المتابعة كضيف</button></div></div>';
+  h+='<div class="authlinks"><button class="link" data-a="auth-go" data-v="'+(sg?"login":"signup")+'">'+(sg?"لديك حساب؟ سجّل الدخول":"ليس لديك حساب؟ أنشئ حسابًا")+'</button>'+(sg?'':'<button class="link" data-a="auth-go" data-v="recover">نسيت كلمة المرور؟</button>')+'<button class="link" data-a="guest">المتابعة كضيف</button></div></div>';
   return h;
+}
+function vPrivacy(){
+  return '<div class="row between" style="margin-bottom:10px"><h2 style="margin:0">سياسة الخصوصية</h2><button class="link" data-a="privback">رجوع ›</button></div><div class="card" style="line-height:1.9"><p class="lbl">مسودة تحتاج مراجعة قانونية قبل الإطلاق الرسمي.</p><b>ما نجمعه</b><p>الاسم ورقم الهاتف والدولة، والبريد الإلكتروني إن أدخلته. أما بياناتك المالية (الدخل والمصروفات والتصنيفات) فتُشفَّر على جهازك قبل أن تُرسل.</p><b>من يراها</b><p>أنت فقط. المفتاح الذي يفك التشفير يبقى عندك، ولا يستطيع مالك الخدمة ولا مزوّد الاستضافة قراءة بياناتك المالية.</p><b>مفتاح الاسترداد</b><p>يظهر لك مرة واحدة عند التسجيل. إذا نسيت كلمة المرور فبه تسترد حسابك. وإذا فقدت كلمة المرور ومفتاح الاسترداد معًا، فبياناتك تضيع نهائيًا ولا يمكن استرجاعها، وتتحمل أنت المسؤولية عن ذلك.</p><b>الحذف</b><p>تستطيع مسح بياناتك في أي وقت من صفحة حسابي. ولحذف الحساب كاملًا تواصل معنا.</p><b>ما لا نفعله</b><p>لا نبيع بياناتك، ولا نعرض إعلانات، ولا نشاركها مع أي جهة.</p></div>';
 }
 function bioOn(){return !!(U&&localStorage.getItem("mizan-bio:"+U.id))}
 var PWOPEN=false,THM=false;
@@ -638,8 +696,10 @@ function vAcct(){
   h+=vSettings();
   h+='<div class="card" style="padding:6px 14px"><div class="mrow"><span class="mi">'+SVG.fp+'</span><span>البصمة'+(BIOK?'':'<small class="lbl" style="display:block">غير مدعومة على هذا الجهاز</small>')+'</span><label class="sw bio"><input type="checkbox" data-c="biotog" aria-label="البصمة"'+(bioOn()?" checked":"")+(BIOK?"":" disabled")+'></label></div></div>';
   h+='<div class="card"><button class="btn danger wide" data-a="del" data-k="wipe">مسح كل البيانات</button>'+confirmBox("wipe","سيتم مسح كل الدخل والمصروفات وإرجاع المصادر وأبواب الصرف للوضع الأول. لا يمكن التراجع.","نعم، امسح كل شيء")+'</div>';
-  return h+'<button class="btn danger wide" data-a="logout">تسجيل الخروج</button>';
+  h+='<div class="card" style="padding:6px 14px"><button class="mrow" data-a="priv"><span class="mi">'+SVGI.list+'</span><span>سياسة الخصوصية</span><span class="chev">‹</span></button></div>';
+  return h+'<button class="btn danger wide" data-a="logout">تسجيل الخروج</button>'+FOOT();
 }
+function FOOT(){return '<p class="lbl" style="text-align:center;margin:22px 0 2px">© '+new Date().getFullYear()+' ميزان، جميع الحقوق محفوظة</p><p class="lbl" style="text-align:center;direction:ltr;letter-spacing:.08em;font-weight:700;margin:0">CREATED BY YOUSEF ALFITORY</p>'}
 var PDEDIT=false;
 function vPdata(){
   var h=back("البيانات الشخصية");
@@ -654,6 +714,7 @@ function vPdata(){
   var lk='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   h+='<div class="card" style="padding:6px 14px"><button class="mrow" data-a="pwtoggle" aria-expanded="'+PWOPEN+'"><span class="mi">'+lk+'</span><span>تغيير كلمة المرور</span><span class="chev">'+(PWOPEN?"⌃":"‹")+'</span></button>';
   if(PWOPEN)h+='<div style="padding:0 4px 12px"><label class="f" for="opw" style="margin-top:4px">كلمة المرور الحالية</label><input id="opw" type="password" autocomplete="current-password"><label class="f" for="npw">كلمة المرور الجديدة</label><input id="npw" type="password" autocomplete="new-password"><p class="lbl" style="margin:6px 0 0">6 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم (بالإنجليزية).</p><button class="btn pri wide" style="margin-top:12px" data-a="pw-change">حفظ كلمة المرور</button></div>';
+  h+='</div><div class="card" style="padding:6px 14px"><button class="mrow" data-a="rkrot" aria-expanded="'+RKOPEN+'"><span class="mi">'+SVGI.tag+'</span><span>مفتاح استرداد جديد</span><span class="chev">'+(RKOPEN?"⌃":"‹")+'</span></button>'+(RKOPEN?'<div style="padding:0 4px 12px"><p class="lbl">إذا ضاع مفتاحك، أنشئ مفتاحًا جديدًا. المفتاح القديم يتوقف عن العمل فورًا.</p><label class="f" for="rkpw">كلمة المرور الحالية</label><input id="rkpw" type="password" autocomplete="current-password"><button class="btn pri wide" style="margin-top:12px" data-a="dorotate">إنشاء مفتاح جديد</button></div>':'');
   return h+'</div>';
 }
 
@@ -670,12 +731,18 @@ async function doLogin(){
   if(!pw){aerr("أدخل كلمة المرور.");return}
   aerr("جاري الدخول...");
   try{
-    var j=await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:emailOf(DIAL[c],ph),password:pw}});
-    setSes(j);try{localStorage.setItem("mizan-lc",c)}catch(e){}BOOT=true;render();await enter();
+    var email=emailOf(DIAL[c],ph),mk=await mkOf(pw,email),ap=await authOf(mk);
+    var j=await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:email,password:ap}});
+    setSes(j);try{localStorage.setItem("mizan-lc",c)}catch(e){}
+    var t=await tok(),d=await sb("/rest/v1/user_data?select=data&user_id=eq."+SES.uid,{tok:t}),env=d&&d[0]&&d[0].data;
+    if(!env||env.v!==2){clearSes();aerr("هذا الحساب غير مكتمل. أنشئ حسابًا برقم آخر أو تواصل معنا.");return}
+    var kek=await kekOf("enc|",mk);DEKRAW=await decB(kek,env.wpw);DEK=await aesKey(DEKRAW);
+    try{localStorage.setItem("mizan-dek:"+SES.uid,b64(DEKRAW))}catch(e){}
+    BOOT=true;render();await enter();
   }catch(e){
     BOOT=false;render();
     if(e.status===400||e.code==="invalid_credentials")aerr("رقم الهاتف أو كلمة المرور غير صحيحة.");
-    else aerr("تعذّر الاتصال بالخادم: "+e.message);
+    else aerr("تعذّر الدخول: "+e.message);
   }
 }
 async function doSignup(){
@@ -685,26 +752,53 @@ async function doSignup(){
   if(!pwOk(pw)){aerr(PWMSG);return}
   if(pw!==pw2){aerr("كلمتا المرور غير متطابقتين.");return}
   if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){aerr("البريد الإلكتروني غير صحيح.");return}
+  if(!$("aconsent").checked){aerr("يجب الموافقة على شروط الخصوصية للمتابعة.");return}
   aerr("جاري إنشاء الحساب...");
   try{
+    var email=emailOf(DIAL[c],ph),mk=await mkOf(pw,email),ap=await authOf(mk),kek=await kekOf("enc|",mk);
     var meta={name:name,country:c,dial:DIAL[c],phone:ph,email:em};
-    var j=await sb("/auth/v1/signup",{m:"POST",b:{email:emailOf(DIAL[c],ph),password:pw,data:meta}});
+    var j=await sb("/auth/v1/signup",{m:"POST",b:{email:email,password:ap,data:meta}});
     if(!j||!j.access_token){aerr("يجب إيقاف خيار Confirm email في إعدادات Supabase (Authentication ثم Sign In / Providers ثم Email).");return}
     setSes(j);try{localStorage.setItem("mizan-lc",c)}catch(e){}
+    DEKRAW=rnd(32);DEK=await aesKey(DEKRAW);ENV={wpw:await encB(kek,DEKRAW)};
     var guest=null;try{guest=JSON.parse(localStorage.getItem(K))}catch(e){}
     S=(guest&&guest.tx&&guest.tx.length)?guest:def();S.country=c;S.cur=currencyOf(c);fixS();
-    var t=j.access_token;
-    await sb("/rest/v1/profiles?on_conflict=id",{m:"POST",tok:t,prefer:"resolution=merge-duplicates,return=minimal",b:{id:j.user.id,name:name,country:c,dial:DIAL[c],phone:ph,email:em}});
+    await sb("/rest/v1/profiles?on_conflict=id",{m:"POST",tok:j.access_token,prefer:"resolution=merge-duplicates,return=minimal",b:{id:j.user.id,name:name,country:c,dial:DIAL[c],phone:ph,email:em}});
     U={id:j.user.id,name:name,country:c,dial:DIAL[c],phone:ph,email:em};
-    await pushNow();startApp();
+    try{localStorage.setItem("mizan-dek:"+U.id,b64(DEKRAW))}catch(e){}
+    LOADED=true;
+    await newRecoveryKey(email,ap);
+    await pushNow();
+    startApp();
   }catch(e){
     if(e.code==="user_already_exists"||/already/i.test(e.message))aerr("هذا الرقم مسجل مسبقًا. سجّل الدخول.");
     else aerr("تعذّر إنشاء الحساب: "+e.message);
   }
 }
+async function doRecover(){
+  var c=$("sgc")?$("sgc").value:"ليبيا",ph=normPhone($("aphone").value),rk=rkParse($("arkey").value),pw=$("apw").value,pw2=$("apw2").value;
+  if(ph.length<6){aerr("أدخل رقم الهاتف.");return}
+  if(!rk){aerr("مفتاح الاسترداد غير مكتمل. هو 26 حرفًا ورقمًا.");return}
+  if(!pwOk(pw)){aerr(PWMSG);return}
+  if(pw!==pw2){aerr("كلمتا المرور غير متطابقتين.");return}
+  aerr("جاري الاسترداد...");
+  try{
+    var email=emailOf(DIAL[c],ph),blob=await sb("/rest/v1/rpc/get_recovery_blob",{m:"POST",b:{p_email:email}});
+    if(!blob){aerr("لا يوجد مفتاح استرداد لهذا الرقم.");return}
+    var inner;try{inner=JSON.parse(td.decode(await decB(await kekOf("rk|",rk),blob)))}catch(e){aerr("مفتاح الاسترداد غير صحيح.");return}
+    var j=await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:email,password:inner.ap}});
+    setSes(j);DEKRAW=unb64(inner.dek);DEK=await aesKey(DEKRAW);
+    var t=await tok(),d=await sb("/rest/v1/user_data?select=data&user_id=eq."+SES.uid,{tok:t}),env=d&&d[0]&&d[0].data;
+    if(!env||env.v!==2){clearSes();aerr("لم نجد بيانات لهذا الحساب.");return}
+    ENV={wpw:env.wpw};S=await openData(env);LOADED=true;
+    await setNewPassword(email,pw);
+    try{localStorage.setItem("mizan-dek:"+SES.uid,b64(DEKRAW));localStorage.setItem("mizan-lc",c)}catch(e){}
+    BOOT=true;render();await enter();
+  }catch(e){BOOT=false;render();aerr("تعذّر الاسترداد: "+e.message)}
+}
 async function signOut(){
   var keep=U&&localStorage.getItem("mizan-bio:"+U.id);
-  if(!keep){try{if(SES)await sb("/auth/v1/logout",{m:"POST",tok:SES.at})}catch(e){}clearSes()}
+  if(!keep){try{if(SES)await sb("/auth/v1/logout",{m:"POST",tok:SES.at})}catch(e){}try{var u0=U?U.id:(SES&&SES.uid);if(u0)localStorage.removeItem("mizan-dek:"+u0)}catch(e){}clearSes();DEK=null;DEKRAW=null;ENV=null}LOADED=false;
   U=null;G=false;LOCK=false;BOOT=false;AV="login";MSG2="";P="home";load();render();window.scrollTo(0,0);
 }
 async function acctSave(){
@@ -722,13 +816,18 @@ async function acctSave(){
 async function pwChange(){
   var o=$("opw").value,n=$("npw").value;
   if(!pwOk(n)){MSG2=PWMSG;render();return}
-  try{
-    await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:emailOf(U.dial,U.phone),password:o}});
-  }catch(e){MSG2="كلمة المرور الحالية غير صحيحة.";render();return}
-  try{
-    var t=await tok();await sb("/auth/v1/user",{m:"PUT",tok:t,b:{password:n}});MSG2="تم تغيير كلمة المرور.";PWOPEN=false;
-  }catch(e){MSG2="تعذّر تغيير كلمة المرور: "+e.message}
-  render();
+  var email=emailOf(U.dial,U.phone);
+  try{var mk0=await mkOf(o,email);await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:email,password:await authOf(mk0)}})}
+  catch(e){MSG2="كلمة المرور الحالية غير صحيحة.";render();return}
+  try{await setNewPassword(email,n);MSG2="تم تغيير كلمة المرور. احفظ مفتاح الاسترداد الجديد.";PWOPEN=false}
+  catch(e){MSG2="تعذّر تغيير كلمة المرور: "+e.message}
+  render();sheet();
+}
+async function doRotate(){
+  var o=$("rkpw").value,email=emailOf(U.dial,U.phone);
+  try{var mk0=await mkOf(o,email),ap=await authOf(mk0);await sb("/auth/v1/token?grant_type=password",{m:"POST",b:{email:email,password:ap}});await newRecoveryKey(email,ap);RKOPEN=false;MSG2="تم إنشاء مفتاح استرداد جديد."}
+  catch(e){MSG2=(e.status===400)?"كلمة المرور غير صحيحة.":"تعذّر إنشاء المفتاح: "+e.message}
+  render();sheet();
 }
 
 /* ---------- البصمة: قفل للتطبيق على هذا الجهاز عبر WebAuthn ---------- */
